@@ -92,3 +92,8 @@ In local test runs, these thresholds are met consistently.
 ### What was challenging
 - Keeping interface tests deterministic while avoiding external API dependencies.
 - Balancing project simplicity with realistic production structure.
+
+### What I would improve with more time
+- Replace the deterministic demo scoring model in `src/app.py` with the best MLflow-tracked production model artifact.
+- Add richer model analysis (calibration plots, subgroup checks, and threshold tuning) for safer decision support.
+- Add CI enhancements beyond tests (linting, type checks, and Docker build verification) plus release tagging.
