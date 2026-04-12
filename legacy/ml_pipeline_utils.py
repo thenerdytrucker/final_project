@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -43,9 +43,17 @@ def preprocess_dataframe(
 
 
 def train_reference_model(random_state: int = 42) -> tuple[Pipeline, pd.DataFrame, pd.Series]:
-    dataset = load_breast_cancer(as_frame=True)
-    features = dataset.data
-    target = dataset.target
+    x_array, y_array = make_classification(
+        n_samples=500,
+        n_features=10,
+        n_informative=8,
+        n_redundant=0,
+        class_sep=2.5,
+        random_state=random_state,
+    )
+    features = pd.DataFrame(
+        x_array, columns=[f"feature_{index}" for index in range(10)])
+    target = pd.Series(y_array)
 
     x_train, x_test, y_train, y_test = train_test_split(
         features,

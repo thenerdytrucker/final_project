@@ -3,22 +3,16 @@ experiment:
   tracking_uri: sqlite:///mlflow.db
 
 data:
-  source: sklearn_breast_cancer
+  source: kagglehub_pima_diabetes
   test_size: 0.2
   random_state: 42
 
 features:
   numeric:
-    - mean radius
-    - mean texture
-    - mean perimeter
-    - mean area
-    - mean smoothness
-    - mean compactness
-    - mean concavity
-    - mean concave points
-    - mean symmetry
-    - mean fractal dimension
+    - Glucose
+    - BloodPressure
+    - BMI
+    - Age
 
 training:
   model_type: logistic_regression

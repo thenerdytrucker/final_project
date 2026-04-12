@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
+import kagglehub
 import mlflow
 import mlflow.sklearn
 import pandas as pd
 import yaml
-from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -38,13 +39,17 @@ def build_model_from_config(config: dict) -> Pipeline:
 
 
 def load_training_data(config: dict) -> tuple[pd.DataFrame, pd.Series]:
-    source = config["data"].get("source", "sklearn_breast_cancer")
-    if source != "sklearn_breast_cancer":
+    source = config["data"].get("source", "kagglehub_pima_diabetes")
+    if source != "kagglehub_pima_diabetes":
         raise ValueError(
-            "Only 'sklearn_breast_cancer' is supported in this template.")
+            "Only 'kagglehub_pima_diabetes' is supported in this project.")
 
-    dataset = load_breast_cancer(as_frame=True)
-    return dataset.data, dataset.target
+    dataset_path = kagglehub.dataset_download(
+        "uciml/pima-indians-diabetes-database")
+    df = pd.read_csv(os.path.join(dataset_path, "diabetes.csv"))
+    feature_columns = config["features"].get(
+        "numeric", ["Glucose", "BloodPressure", "BMI", "Age"])
+    return df[feature_columns], df["Outcome"]
 
 
 def train_with_config(config_path: str) -> dict[str, float]:

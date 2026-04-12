@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.datasets import load_breast_cancer
+import pandas as pd
+from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
 from src.evaluate import evaluate_model
@@ -20,9 +21,17 @@ def _test_config() -> dict:
 
 
 def _train_reference():
-    dataset = load_breast_cancer(as_frame=True)
-    x = dataset.data
-    y = dataset.target
+    x_array, y_array = make_classification(
+        n_samples=500,
+        n_features=10,
+        n_informative=8,
+        n_redundant=0,
+        class_sep=2.5,
+        random_state=42,
+    )
+    x = pd.DataFrame(x_array, columns=[
+                     f"feature_{index}" for index in range(10)])
+    y = pd.Series(y_array)
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=0.25, random_state=42, stratify=y
     )

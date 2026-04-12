@@ -41,8 +41,8 @@ your-project/
    ```
 4. Update `.env` with your API keys if you plan to use external LLM services.
 5. Data:
-   - This template training flow uses `sklearn_breast_cancer` by default (no manual download required).
-   - You can replace this in `configs/config.yaml` and extend `src/train.py` for your own source.
+   - The training flow uses the Pima Indians Diabetes dataset via `kagglehub`.
+   - Training settings and selected feature columns are defined in `configs/config.yaml`.
 
 ## Usage Instructions
 ### Train Model with Config
