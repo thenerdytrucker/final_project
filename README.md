@@ -94,6 +94,6 @@ In local test runs, these thresholds are met consistently.
 - Balancing project simplicity with realistic production structure.
 
 ### What I would improve with more time
-- Replace the deterministic demo scoring model in `src/app.py` with the best MLflow-tracked production model artifact.
-- Add richer model analysis (calibration plots, subgroup checks, and threshold tuning) for safer decision support.
-- Add CI enhancements beyond tests (linting, type checks, and Docker build verification) plus release tagging.
+- Replace the simple demo model in `src/app.py` with the best model saved from MLflow.
+- Add more model checks (like better charts, group comparisons, and tuning the cutoff) so predictions are safer.
+- Improve GitHub automation by adding lint checks, type checks, Docker build checks, and release tags.
