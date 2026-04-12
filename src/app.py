@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import os
 import re
+from functools import lru_cache
 
+import mlflow
+import mlflow.sklearn
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from mlflow.tracking import MlflowClient
 from pydantic import BaseModel
 
 MODEL_FEATURES = ["Glucose", "BloodPressure", "BMI", "Age"]
+MLFLOW_EXPERIMENT_NAME = os.getenv(
+    "MLFLOW_EXPERIMENT_NAME", "pima_diabetes_sprint17")
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 
 
 class DirectPredictRequest(BaseModel):
@@ -38,8 +46,31 @@ class _SimpleModel:
         return [[1.0 - prob, prob]]
 
 
-def load_best_model() -> _SimpleModel:
-    return _SimpleModel()
+@lru_cache(maxsize=1)
+def load_best_model():
+    try:
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+        client = MlflowClient()
+        experiment = client.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
+        if experiment is None:
+            return _SimpleModel()
+
+        runs = mlflow.search_runs(
+            experiment_ids=[experiment.experiment_id],
+            filter_string="params.feature_set = 'glucose_bp_bmi_age'",
+            order_by=["metrics.auc DESC"],
+            max_results=1,
+        )
+        if runs.empty:
+            return _SimpleModel()
+
+        best_run_id = runs.iloc[0]["run_id"]
+        model_uri = f"runs:/{best_run_id}/model"
+        return mlflow.sklearn.load_model(model_uri)
+    except Exception:
+        # Keep interface available when MLflow artifacts are not available yet.
+        return _SimpleModel()
 
 
 def parse_natural_language_input(query: str) -> dict[str, object]:
