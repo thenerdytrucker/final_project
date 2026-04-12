@@ -92,8 +92,3 @@ In local test runs, these thresholds are met consistently.
 ### What was challenging
 - Keeping interface tests deterministic while avoiding external API dependencies.
 - Balancing project simplicity with realistic production structure.
-
-### What I would improve with more time
-- Add model registry + version promotion rules.
-- Add richer calibration analysis and fairness checks.
-- Add CI pipeline for lint, tests, and Docker build verification.
