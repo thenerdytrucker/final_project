@@ -58,6 +58,12 @@ Then open:
 - `http://localhost:8000/health`
 - `http://localhost:8000/docs`
 
+### Run with Docker
+```bash
+docker build -t diabetes-risk-app .
+docker run -p 8000:8000 diabetes-risk-app
+```
+
 ### Run Tests
 ```bash
 pytest tests/ -v
