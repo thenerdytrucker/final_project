@@ -17,9 +17,6 @@ class DirectPredictRequest(BaseModel):
 
 
 class PredictResponse(BaseModel):
-    status: str
-    prediction_class: int
-    prediction_probability: float
     response: str
 
 
@@ -93,8 +90,5 @@ def predict_direct(req: DirectPredictRequest):
 
     label = "higher diabetes risk" if pred == 1 else "lower diabetes risk"
     return {
-        "status": "ok",
-        "prediction_class": pred,
-        "prediction_probability": round(prob, 4),
         "response": f"Prediction: {label} (probability={prob:.2f}).",
     }

@@ -47,6 +47,5 @@ def test_predict_form_returns_diabetes_probability() -> None:
 
     payload = response.json()
     assert response.status_code == 200
-    assert payload["prediction_class"] in [0, 1]
-    assert 0.0 <= payload["prediction_probability"] <= 1.0
+    assert set(payload.keys()) == {"response"}
     assert "Prediction:" in payload["response"]
