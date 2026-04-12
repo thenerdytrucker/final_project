@@ -63,7 +63,7 @@ def build_pipeline(model_type: str, params: dict[str, Any], random_state: int) -
             random_state=random_state,
         )
     else:
-        raise ValueError(f"Unsupported model_type: {model_type}")
+        raise ValueError(f"Model type not supported: {model_type}")
 
     return Pipeline([
         ("scaler", StandardScaler()),
@@ -126,7 +126,7 @@ def load_training_data(config: dict) -> tuple[pd.DataFrame, pd.Series]:
     source = config["data"].get("source", "kagglehub_pima_diabetes")
     if source != "kagglehub_pima_diabetes":
         raise ValueError(
-            "Only 'kagglehub_pima_diabetes' is supported in this project.")
+            "This project only supports 'kagglehub_pima_diabetes'.")
 
     dataset_path = kagglehub.dataset_download(
         "uciml/pima-indians-diabetes-database")
@@ -182,11 +182,11 @@ def train_with_config(config_path: str) -> dict[str, float]:
 
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if experiment is None:
-        raise RuntimeError("Experiment not found after logging runs.")
+        raise RuntimeError("Could not find the experiment after logging runs.")
 
     ranked_runs = compare_experiment_runs(experiment.experiment_id)
     if ranked_runs.empty:
-        raise RuntimeError("No runs found for comparison.")
+        raise RuntimeError("No runs found to compare.")
 
     best_row = ranked_runs.iloc[0]
     return {
@@ -200,16 +200,16 @@ def train_with_config(config_path: str) -> dict[str, float]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Train model with YAML config.")
+        description="Train the model from a YAML config file.")
     parser.add_argument(
         "--config",
         default=str(Path("configs") / "config.yaml"),
-        help="Path to YAML config file.",
+        help="Path to the YAML config file.",
     )
     args = parser.parse_args()
 
     metrics = train_with_config(args.config)
-    print("Training complete. Best run metrics:")
+    print("Training done. Best run metrics:")
     for key, value in metrics.items():
         print(f"{key}: {value:.4f}")
 

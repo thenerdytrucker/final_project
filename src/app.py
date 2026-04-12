@@ -33,7 +33,7 @@ app = FastAPI(title="Diabetes Risk Interface", version="1.0.0")
 
 class _SimpleModel:
     def predict_proba(self, sample: pd.DataFrame):
-        # Deterministic baseline score for demonstration and testing.
+        # Simple backup score so the app still works in tests.
         g = float(sample["Glucose"].iloc[0])
         bp = float(sample["BloodPressure"].iloc[0])
         bmi = float(sample["BMI"].iloc[0])
@@ -69,7 +69,7 @@ def load_best_model():
         model_uri = f"runs:/{best_run_id}/model"
         return mlflow.sklearn.load_model(model_uri)
     except Exception:
-        # Keep interface available when MLflow artifacts are not available yet.
+        # If MLflow is not ready, use the backup model.
         return _SimpleModel()
 
 

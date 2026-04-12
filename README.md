@@ -1,13 +1,20 @@
 # Diabetes Risk Prediction + LLM Interface
 
 ## Project Description
-This project predicts the onset risk of diabetes from clinical features and provides a lightweight API/UI interface for interaction. It is designed for learners, data practitioners, and early-stage prototyping teams who need a reproducible machine learning workflow with experiment tracking and an application layer.
+This project predicts diabetes risk from basic health inputs and serves results through a simple API.
 
-The problem it solves is turning raw health-style tabular features into a usable risk estimate, while keeping training, evaluation, configuration, and app integration organized in one codebase.
+The goal was to build one clean workflow that includes:
+- data prep
+- model training
+- evaluation
+- experiment tracking
+- app deployment
+
+In short, it turns raw tabular health data into a usable risk prediction you can test through an endpoint.
 
 ## Repository Structure
-```
-your-project/
+```text
+archive/
 ├── README.md
 ├── requirements.txt
 ├── Dockerfile
@@ -29,34 +36,34 @@ your-project/
     └── .gitkeep
 ```
 
-## Setup Instructions
+## Setup
 1. Create and activate a Python environment.
 2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Create your environment file from template:
-   ```bash
-   cp .env.example .env
-   ```
-4. Update `.env` with your API keys if you plan to use external LLM services.
-5. Data:
-   - The training flow uses the Pima Indians Diabetes dataset via `kagglehub`.
-   - Training settings and selected feature columns are defined in `configs/config.yaml`.
+```bash
+pip install -r requirements.txt
+```
+3. Create an environment file:
+```bash
+cp .env.example .env
+```
+4. If you use external LLM services, add your API keys to .env.
+5. Data details:
+- Training uses the Pima Indians Diabetes dataset through kagglehub.
+- Training options and chosen features are in configs/config.yaml.
 
-## Usage Instructions
-### Train Model with Config
+## How To Run
+### Train the model
 ```bash
 python -m src.train --config configs/config.yaml
 ```
 
-### Run API
+### Start the API
 ```bash
 uvicorn src.app:app --reload
 ```
-Then open:
-- `http://localhost:8000/health`
-- `http://localhost:8000/docs`
+Useful pages:
+- http://localhost:8000/health
+- http://localhost:8000/docs
 
 ### Run with Docker
 ```bash
@@ -64,36 +71,47 @@ docker build -t diabetes-risk-app .
 docker run -p 8000:8000 diabetes-risk-app
 ```
 
-### Run Tests
+### Run tests
 ```bash
 pytest tests/ -v
 ```
 
-## Architecture Overview
-- `src/preprocess.py`: data cleaning, categorical encoding, and numeric scaling.
-- `src/train.py`: config-driven training entry point that reads hyperparameters from YAML, splits data, trains pipeline, logs to MLflow.
-- `src/evaluate.py`: evaluation utilities (accuracy, precision, recall, F1, AUC).
-- `src/app.py`: interface layer exposing prediction endpoint and natural-language parsing helper.
+## Architecture (Quick View)
+- src/preprocess.py: handles data cleaning and scaling.
+- src/train.py: trains models from YAML config and logs runs to MLflow.
+- src/evaluate.py: calculates metrics (accuracy, precision, recall, F1, AUC).
+- src/app.py: serves prediction endpoints and input parsing.
 
-The ML pipeline produces probability outputs; the app converts them into user-facing responses.
+The model outputs probabilities, and the app turns those into a clear response.
 
 ## Results Summary
-Current reference model tests enforce minimum quality thresholds:
+Current quality thresholds checked in tests:
 - Accuracy >= 0.90
 - AUC >= 0.95
 
-In local test runs, these thresholds are met consistently.
+Recent local test runs meet these targets.
+
+## Best Model Choice (Why)
+The best model is selected by ranking MLflow runs by AUC on held-out test data.
+
+Why AUC:
+- This is a medical risk task, so we care about class separation across thresholds.
+- The dataset is not perfectly balanced, so AUC is more reliable than accuracy alone.
+
+Final choice:
+- The top run by AUC is chosen as the best model.
+- I still review F1 and accuracy as secondary checks so the model is not only good on one metric.
 
 ## Reflection
 ### What I learned
-- How to separate ML training and app logic into testable modules.
-- How config-driven workflows improve reproducibility and iteration speed.
+- Breaking the project into separate modules makes it easier to test and maintain.
+- Config-based training makes experiments faster and easier to reproduce.
 
 ### What was challenging
-- Keeping interface tests deterministic while avoiding external API dependencies.
-- Balancing project simplicity with realistic production structure.
+- Keeping interface tests stable without relying on external services.
+- Staying simple while still using a realistic project structure.
 
-### What I would improve with more time
-- Replace the simple demo model in `src/app.py` with the best model saved from MLflow.
-- Add more model checks (like better charts, group comparisons, and tuning the cutoff) so predictions are safer.
-- Improve GitHub automation by adding lint checks, type checks, Docker build checks, and release tags.
+### What I would improve next
+- Always load the best MLflow model artifact in the app flow.
+- Add deeper evaluation (more charts, threshold tuning, subgroup checks).
+- Strengthen CI with linting, type checks, and Docker validation.
