@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Environments
+.env
+.venv/
+venv/
+
+# Data and artifacts
+data/*
+!data/.gitkeep
+*.csv
+mlruns/
+mlflow.db
+*.pkl
+*.joblib
+
+# VS Code
+.vscode/
