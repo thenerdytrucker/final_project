@@ -12,6 +12,12 @@ from mlflow.tracking import MlflowClient
 from pydantic import BaseModel
 
 MODEL_FEATURES = ["Glucose", "BloodPressure", "BMI", "Age"]
+DEFAULT_FEATURES = {
+    "Glucose": 120.0,
+    "BloodPressure": 70.0,
+    "BMI": 28.0,
+    "Age": 33.0,
+}
 MLFLOW_EXPERIMENT_NAME = os.getenv(
     "MLFLOW_EXPERIMENT_NAME", "pima_diabetes_sprint17")
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
@@ -26,6 +32,10 @@ class DirectPredictRequest(BaseModel):
 
 class PredictResponse(BaseModel):
     response: str
+
+
+class TextPredictRequest(BaseModel):
+    query: str
 
 
 app = FastAPI(title="Diabetes Risk Interface", version="1.0.0")
@@ -76,17 +86,20 @@ def load_best_model():
 def parse_natural_language_input(query: str) -> dict[str, object]:
     normalized = query.lower()
     patterns = {
-        "Glucose": r"(?:glucose)\s*(?:is|=|:)?\s*(-?\d+(?:\.\d+)?)",
-        "BloodPressure": r"(?:blood\s*pressure|bp)\s*(?:is|=|:)?\s*(-?\d+(?:\.\d+)?)",
-        "BMI": r"(?:bmi)\s*(?:is|=|:)?\s*(-?\d+(?:\.\d+)?)",
-        "Age": r"(?:age)\s*(?:is|=|:)?\s*(-?\d+(?:\.\d+)?)",
+        "Glucose": r"(?:glucose)\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)",
+        "BloodPressure": r"(?:blood\s*pressure|bloodpressue|bp)\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)",
+        "BMI": r"(?:bmi)\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)",
+        "Age": r"(?:age\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)|(-?\d+(?:\.\d+)?)\s*year\s*old)",
     }
 
     features: dict[str, float] = {}
     for key, pattern in patterns.items():
         match = re.search(pattern, normalized)
         if match:
-            features[key] = float(match.group(1))
+            for group in match.groups():
+                if group is not None:
+                    features[key] = float(group)
+                    break
 
     missing = [feature for feature in MODEL_FEATURES if feature not in features]
     return {
@@ -94,6 +107,16 @@ def parse_natural_language_input(query: str) -> dict[str, object]:
         "missing_features": missing,
         "is_complete": len(missing) == 0,
     }
+
+
+def fill_missing_features(features: dict[str, float]) -> tuple[dict[str, float], list[str]]:
+    completed = dict(features)
+    filled: list[str] = []
+    for feature in MODEL_FEATURES:
+        if feature not in completed:
+            completed[feature] = DEFAULT_FEATURES[feature]
+            filled.append(feature)
+    return completed, filled
 
 
 @app.get("/health")
@@ -120,6 +143,35 @@ def predict_direct(req: DirectPredictRequest):
     pred = int(prob >= 0.5)
 
     label = "higher diabetes risk" if pred == 1 else "lower diabetes risk"
+    return {
+        "response": f"Prediction: {label} (probability={prob:.2f}).",
+    }
+
+
+@app.post("/predict/text", response_model=PredictResponse)
+def predict_text(req: TextPredictRequest):
+    parsed = parse_natural_language_input(req.query)
+    features, filled = fill_missing_features(parsed["features"])
+
+    if features["Age"] <= 0 or features["BMI"] <= 0:
+        raise HTTPException(
+            status_code=422, detail="Age and BMI must be positive values.")
+
+    sample = pd.DataFrame([features])[MODEL_FEATURES]
+    model = load_best_model()
+    prob = float(model.predict_proba(sample)[0][1])
+    pred = int(prob >= 0.5)
+
+    label = "higher diabetes risk" if pred == 1 else "lower diabetes risk"
+    if filled:
+        used_defaults = ", ".join(filled)
+        return {
+            "response": (
+                f"Prediction: {label} (probability={prob:.2f}). "
+                f"Missing values were filled with defaults for: {used_defaults}."
+            ),
+        }
+
     return {
         "response": f"Prediction: {label} (probability={prob:.2f}).",
     }

@@ -4,14 +4,13 @@ from src import app as api_app
 
 
 def test_natural_language_parser_extracts_features() -> None:
-    query = "glucose 148, blood pressure 72, bmi 33.6, age 50"
+    query = "I am a 50 year old male with a bmi of 33 and my bloodpressue is 77"
     parsed = api_app.parse_natural_language_input(query)
 
-    assert parsed["is_complete"] is True
+    assert parsed["is_complete"] is False
     assert parsed["features"] == {
-        "Glucose": 148.0,
-        "BloodPressure": 72.0,
-        "BMI": 33.6,
+        "BloodPressure": 77.0,
+        "BMI": 33.0,
         "Age": 50.0,
     }
 
@@ -49,3 +48,21 @@ def test_predict_form_returns_diabetes_probability() -> None:
     assert response.status_code == 200
     assert set(payload.keys()) == {"response"}
     assert "Prediction:" in payload["response"]
+
+
+def test_predict_text_handles_incomplete_input_gracefully() -> None:
+    client = TestClient(api_app.app)
+
+    response = client.post(
+        "/predict/text",
+        json={
+            "query": "I am a 50 year old male with a bmi of 33 and my bloodpressue is 77"
+        },
+    )
+
+    payload = response.json()
+    assert response.status_code == 200
+    assert set(payload.keys()) == {"response"}
+    assert "Prediction:" in payload["response"]
+    assert "probability=" in payload["response"]
+    assert "Missing values were filled with defaults" in payload["response"]
