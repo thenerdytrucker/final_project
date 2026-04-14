@@ -86,20 +86,37 @@ def load_best_model():
 def parse_natural_language_input(query: str) -> dict[str, object]:
     normalized = query.lower()
     patterns = {
-        "Glucose": r"(?:glucose)\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)",
-        "BloodPressure": r"(?:blood\s*pressure|bloodpressue|bp)\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)",
-        "BMI": r"(?:bmi)\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)",
-        "Age": r"(?:age\s*(?:is|of|=|:)?\s*(-?\d+(?:\.\d+)?)|(-?\d+(?:\.\d+)?)\s*year\s*old)",
+        "Glucose": [
+            r"(?:glucose|blood\s*sugar)[^\d-]{0,40}(-?\d+(?:\.\d+)?)",
+            r"(-?\d+(?:\.\d+)?)\s*glucose",
+        ],
+        "BloodPressure": [
+            r"(?:blood\s*pressure|bloodpressue|bp|diastolic\s*blood\s*pressure)[^\d-]{0,40}(-?\d+(?:\.\d+)?)",
+            r"(-?\d+(?:\.\d+)?)\s*(?:bp|blood\s*pressure)",
+        ],
+        "BMI": [
+            r"(?:bmi|body\s*mass\s*index)[^\d-]{0,40}(-?\d+(?:\.\d+)?)",
+            r"(-?\d+(?:\.\d+)?)\s*bmi",
+        ],
+        "Age": [
+            r"(?:age)\s*(?:is|of|equals|=|:)?\s*(-?\d+(?:\.\d+)?)",
+            r"(?:i\s*am|i['’]?m|im)\s*(-?\d+(?:\.\d+)?)\s*years?\s*old",
+            r"(-?\d+(?:\.\d+)?)\s*year\s*old",
+        ],
     }
 
     features: dict[str, float] = {}
-    for key, pattern in patterns.items():
-        match = re.search(pattern, normalized)
-        if match:
+    for key, pattern_list in patterns.items():
+        for pattern in pattern_list:
+            match = re.search(pattern, normalized)
+            if not match:
+                continue
             for group in match.groups():
                 if group is not None:
                     features[key] = float(group)
                     break
+            if key in features:
+                break
 
     missing = [feature for feature in MODEL_FEATURES if feature not in features]
     return {
