@@ -67,8 +67,20 @@ Useful pages:
 
 ### Run with Docker
 ```bash
-docker build -t diabetes-risk-app .
-docker run -p 8000:8000 diabetes-risk-app
+docker compose up --build -d
+```
+
+Useful pages:
+- http://localhost:8000/health
+- http://localhost:8000/docs
+
+If port 8000 is already in use, run on a different host port:
+```bash
+APP_PORT=8003 docker compose up --build -d
+```
+PowerShell:
+```powershell
+$env:APP_PORT="8003"; docker compose up --build -d
 ```
 
 ### Run tests
