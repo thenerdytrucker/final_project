@@ -117,5 +117,20 @@ def test_predict_text_handles_incomplete_input_gracefully() -> None:
     assert response.status_code == 200
     assert set(payload.keys()) == {"response"}
     assert "Prediction:" in payload["response"]
-    assert "probability=" in payload["response"]
+    assert "diabetes chance" in payload["response"]
     assert "Missing values were filled with defaults" in payload["response"]
+
+
+@pytest.mark.parametrize(
+    "probability,expected_label",
+    [
+        (0.00, "low"),
+        (0.45, "low"),
+        (0.451, "moderate"),
+        (0.60, "moderate"),
+        (0.601, "substantial"),
+        (0.99, "substantial"),
+    ],
+)
+def test_chance_label_thresholds(probability: float, expected_label: str) -> None:
+    assert api_app.chance_label_from_probability(probability) == expected_label

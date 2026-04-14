@@ -136,6 +136,15 @@ def fill_missing_features(features: dict[str, float]) -> tuple[dict[str, float],
     return completed, filled
 
 
+def chance_label_from_probability(probability: float) -> str:
+    chance_percent = probability * 100.0
+    if chance_percent <= 45.0:
+        return "low"
+    if chance_percent <= 60.0:
+        return "moderate"
+    return "substantial"
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
@@ -157,11 +166,10 @@ def predict_direct(req: DirectPredictRequest):
     sample = pd.DataFrame([features])[MODEL_FEATURES]
     model = load_best_model()
     prob = float(model.predict_proba(sample)[0][1])
-    pred = int(prob >= 0.5)
-
-    label = "higher diabetes risk" if pred == 1 else "lower diabetes risk"
+    chance_percent = prob * 100.0
+    label = chance_label_from_probability(prob)
     return {
-        "response": f"Prediction: {label} (probability={prob:.2f}).",
+        "response": f"Prediction: {label} diabetes chance ({chance_percent:.1f}%).",
     }
 
 
@@ -177,18 +185,17 @@ def predict_text(req: TextPredictRequest):
     sample = pd.DataFrame([features])[MODEL_FEATURES]
     model = load_best_model()
     prob = float(model.predict_proba(sample)[0][1])
-    pred = int(prob >= 0.5)
-
-    label = "higher diabetes risk" if pred == 1 else "lower diabetes risk"
+    chance_percent = prob * 100.0
+    label = chance_label_from_probability(prob)
     if filled:
         used_defaults = ", ".join(filled)
         return {
             "response": (
-                f"Prediction: {label} (probability={prob:.2f}). "
+                f"Prediction: {label} diabetes chance ({chance_percent:.1f}%). "
                 f"Missing values were filled with defaults for: {used_defaults}."
             ),
         }
 
     return {
-        "response": f"Prediction: {label} (probability={prob:.2f}).",
+        "response": f"Prediction: {label} diabetes chance ({chance_percent:.1f}%).",
     }
